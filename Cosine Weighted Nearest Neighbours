@@ -1,0 +1,213 @@
+from __future__ import division
+import random
+import math
+import numpy as np
+import pandas as pd
+from numpy.linalg import norm
+from numpy import c_
+
+#1.collecting data
+df = pd.read_csv(r'C:\Users\Shannon Dunne\OneDrive - Teesside University\Documents\Project\Code\6_Nations_PF_Round1.csv')
+#2.data clean and process
+pd.set_option('display.max_rows',100)
+pd.set_option('display.max_columns',100)
+pd.set_option('display.width', 1000)
+#replace nan values with 0 - inputting a random value could make it inaccurate - input 0
+df = df.replace(np.nan, 0)
+#Create dataframe headings as lists
+list_of_years = df['Year'].values.tolist()
+list_of_years = list_of_years[:-1]
+list_of_countries = df.columns.values.tolist()
+list_of_countries= list_of_countries[1:]
+#convert dataframe in to numpy array
+array = df.to_numpy()
+#Delete Index Year - 1st Column
+array_del_col = np.delete(array, 0, axis=1)
+#array_del_col = np.delete(array_del_col, 5,  axis=1)
+#array_del_col = np.delete(array_del_col, -1:, axis=1)
+#Remove input vector from matrix A
+A = np.delete(array_del_col, 5, axis=0)
+print(A)
+#3.analyse data
+centred_matrix = []
+for a in A:
+    s=sum(a)/len(a[a != 0])
+    b=[]
+    for c in a:
+        if c == 0:
+            b.append(0)
+        else:
+            b.append(c-s)
+    centred_matrix.append(b)
+
+print(centred_matrix)
+centred_matrix = np.row_stack((centred_matrix))
+#***** loop iterating over non-zero entries
+
+#New vector – input values once 1st match had taken place performed
+u1 = (centred_matrix[0, :])
+#results from 1st match
+#Select input vector from array
+v = array_del_col[5, :]
+#*****loop iterating
+#Subtract the mean of the non-zero entries from the non-zero entries
+v1 = []
+sv=sum(v)/len(v[v != 0])
+for i in v:
+    if i == 0:
+        v1.append(0)
+    else:
+        v1.append(i-sv)
+
+print(v1)
+#d(centred_matrix,v) = sqrt(np.sum(C^2))
+#
+centred_matrix = np.array(centred_matrix)
+C = np.subtract(centred_matrix, v1)
+print(C.round())
+C= C.astype(int)
+D=[]
+for i in C:
+    D.append(norm(i))
+
+print(D)
+#list_of_countries_euclid = list_of_countries.append('distance to v')- BREAKS as adds label to list_of_countries permanently
+#Getting dots and not working with print(D)
+Matrix_D= c_[A,D]
+#add 'distance' to column names
+list_of_countries_dist = list_of_countries + ['distance to v']
+df_D = pd.DataFrame(Matrix_D,  index=list_of_years, columns=list_of_countries_dist)
+print(df_D)
+#order vector rows by euclidean distance
+order_D = df_D.sort_values(by='distance to v', ascending=True)
+print(order_D)
+values = order_D.iloc[0]
+print("Prediction for the scores using euclidean distance are ")
+print(values)
+#calculate cosine similiarity
+sim = np.dot(centred_matrix,v)/(norm(centred_matrix, axis=1)*norm(v))
+print(sim)
+Matrix = c_[A,sim]
+list(df.columns)
+#add 'sim' to column names
+list_of_countries_sim = list_of_countries + ['sim']
+df_B = pd.DataFrame(Matrix,  index=list_of_years, columns=list_of_countries_sim)
+print(df_B)
+#order vector rows by cosine similiarity
+order = df_B.sort_values(by='sim', ascending=False)
+order.head()
+#k=1 - most similar year vector
+most_sim_1=order.iloc[:1]
+print("When k=1")
+print("Prediction for England " + str(order.iloc[0,0]))
+print("Prediction for France is " + str(order.iloc[0,1]))
+print("Prediction for Italy is " + str(order.iloc[0,3]))
+print("Prediction for Scotland is " + str(order.iloc[0,4]))
+Matrix_Sim= order.iloc[:,-1:]
+#Prediction England
+abc=order['England']
+england_np = order['England'].to_numpy()
+Matrix_Sim= Matrix_Sim.to_numpy()
+#*****loop
+#Weighted cosine similarity - Ai,jsim(u, v(1)) + ... + Ak,jsim(u, v(k)) / sim(u, v(1)) + ... + sim(u, v(k))
+#England K=:5
+england_k_2=np.dot(england_np[:2], Matrix_Sim[:2])/sum(Matrix_Sim[:2]).tolist()
+england_k_3=np.dot(england_np[:3], Matrix_Sim[:3])/sum(Matrix_Sim[:3]).tolist()
+england_k_4=np.dot(england_np[:4], Matrix_Sim[:4])/sum(Matrix_Sim[:4]).tolist()
+england_k_5=np.dot(england_np[:5], Matrix_Sim[:5])/sum(Matrix_Sim[:5]).tolist()
+#Ireland
+ireland_np = order['Ireland'].to_numpy()
+ireland_k_2=np.dot(ireland_np[:2], Matrix_Sim[:2])/sum(Matrix_Sim[:2]).tolist()
+ireland_k_3=np.dot(ireland_np[:3], Matrix_Sim[:3])/sum(Matrix_Sim[:3]).tolist()
+ireland_k_4=np.dot(ireland_np[:4], Matrix_Sim[:4])/sum(Matrix_Sim[:4]).tolist()
+ireland_k_5=np.dot(ireland_np[:5], Matrix_Sim[:5])/sum(Matrix_Sim[:5]).tolist()
+#France K=:5
+france_np = order['France'].to_numpy()
+france_k_2=np.dot(france_np[:2], Matrix_Sim[:2])/sum(Matrix_Sim[:2]).tolist()
+france_k_3=np.dot(france_np[:3], Matrix_Sim[:3])/sum(Matrix_Sim[:3]).tolist()
+france_k_4=np.dot(france_np[:4], Matrix_Sim[:4])/sum(Matrix_Sim[:4]).tolist()
+france_k_5=np.dot(france_np[:5], Matrix_Sim[:5])/sum(Matrix_Sim[:5]).tolist()
+#Wales
+wales_np = order['Wales'].to_numpy()
+wales_k_2=np.dot(wales_np[:2], Matrix_Sim[:2])/sum(Matrix_Sim[:2]).tolist()
+wales_k_3=np.dot(wales_np[:3], Matrix_Sim[:3])/sum(Matrix_Sim[:3]).tolist()
+wales_k_4=np.dot(wales_np[:4], Matrix_Sim[:4])/sum(Matrix_Sim[:4]).tolist()
+wales_k_5=np.dot(wales_np[:5], Matrix_Sim[:5])/sum(Matrix_Sim[:5]).tolist()
+#Scotland
+scotland_np = order['Scotland'].to_numpy()
+scotland_k_2=np.dot(scotland_np[:2], Matrix_Sim[:2])/sum(Matrix_Sim[:2]).tolist()
+scotland_k_3=np.dot(scotland_np[:3], Matrix_Sim[:3])/sum(Matrix_Sim[:3]).tolist()
+scotland_k_4=np.dot(scotland_np[:4], Matrix_Sim[:4])/sum(Matrix_Sim[:4]).tolist()
+scotland_k_5=np.dot(scotland_np[:5], Matrix_Sim[:5])/sum(Matrix_Sim[:5]).tolist()
+#Italy
+italy_np = order['Italy'].to_numpy()
+italy_k_2=np.dot(italy_np[:2], Matrix_Sim[:2])/sum(Matrix_Sim[:2]).tolist()
+italy_k_3=np.dot(italy_np[:3], Matrix_Sim[:3])/sum(Matrix_Sim[:3]).tolist()
+italy_k_4=np.dot(italy_np[:4], Matrix_Sim[:4])/sum(Matrix_Sim[:4]).tolist()
+italy_k_5=np.dot(italy_np[:5], Matrix_Sim[:5])/sum(Matrix_Sim[:5]).tolist()
+
+k_2=k_2
+k_2=[]
+k_2.append(england_k_2)
+k_2.append(france_k_2)
+k_2.append(scotland_k_2)
+k_2.append(italy_k_2)
+
+k_1 = [order.iloc[0,0], order.iloc[0,1], order.iloc[0,3], order.iloc[0,4]]
+k_2 = [england_k_2[0], france_k_2[0], scotland_k_2[0], italy_k_2[0]]
+k_3 = [england_k_3[0], france_k_3[0], scotland_k_3[0], italy_k_3[0]]
+k_4 = [england_k_4[0], france_k_4[0], scotland_k_4[0], italy_k_4[0]]
+k_5 = [england_k_5[0], france_k_5[0], scotland_k_5[0], italy_k_5[0]]
+
+print("When k=2")
+print("Prediction for England is " + str(round(england_k_2[0], 2)))
+print("Prediction for France is " + str(round(france_k_2[0], 2)))
+print("Prediction for Italy is " + str(round(italy_k_2[0], 2)))
+print("Prediction for Scotland is " + str(round(scotland_k_2[0], 2)))
+
+print("When k=3")
+print("Prediction for England is " + str(round(england_k_3[0], 2)))
+print("Prediction for France is " + str(round(france_k_3[0], 2)))
+print("Prediction for Italy is " + str(round(italy_k_3[0], 2)))
+print("Prediction for Scotland is " + str(round(scotland_k_3[0], 2)))
+
+print("When k=4")
+print("Prediction for England in is " + str(round(england_k_4[0], 2)))
+print("Prediction for France in is " + str(round(france_k_4[0], 2)))
+print("Prediction for Italy is " + str(round(italy_k_4[0], 2)))
+print("Prediction for Scotland is " + str(round(scotland_k_4[0], 2)))
+
+print("When k=5")
+print("Prediction for England is " + str(round(england_k_5[0], 2)))
+print("Prediction for France is " + str(round(france_k_5[0], 2)))
+print("Prediction for Italy is " + str(round(italy_k_5[0], 2)))
+print("Prediction for Scotland is " + str(round(scotland_k_5[0], 2)))
+
+from sklearn.metrics import mean_absolute_error as mae
+from sklearn.metrics import mean_squared_error
+# list of integers of actual and calculated
+actual = [23, 29, 29, 24]
+
+# calculate MAE(actual, calculated)
+error_1 = mae(actual, k_1)
+error_2 = mae(actual, k_2)
+error_3 = mae(actual, k_3)
+error_4 = mae(actual, k_4)
+error_5 = mae(actual, k_5)
+# display
+print("Mean absolute error k=1 : " + str(error_1))
+print("Mean absolute error k=2: " + str(error_2))
+print("Mean absolute error k=3: " + str(error_3))
+print("Mean absolute error k=4: " + str(error_4))
+print("Mean absolute error k=5: " + str(error_5))
+#best number of neighbors is k=3
+rmse_1 = mean_squared_error(actual, k_1, squared=False)
+rmse_2 = mean_squared_error(actual, k_2, squared=False)
+rmse_3 = mean_squared_error(actual, k_3, squared=False)
+rmse_4 = mean_squared_error(actual, k_4, squared=False)
+rmse_5 = mean_squared_error(actual, k_5, squared=False)
+print("Mean Squared Error k=1: " + str(rmse_1))
+print("Mean Squared Error k=2: " + str(rmse_2))
+print("Mean Squared Error k=3: " + str(rmse_3))
+print("Mean Squared Error k=4: " + str(rmse_4))
+print("Mean Squared Error k=5: " + str(rmse_5))
